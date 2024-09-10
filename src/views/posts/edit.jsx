@@ -1,12 +1,13 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import api from "../../api";
-import Swal from "sweetalert2"; // Import SweetAlert2
+import Swal from "sweetalert2";
+import 'trix/dist/trix.css'; // Import Trix CSS
+import 'trix'; // Import Trix JS
 
 export default function PostCreate() {
-  // Define state
   const [image, setImage] = useState(null);
-  const [imagePreview, setImagePreview] = useState(""); // State for image preview URL
+  const [imagePreview, setImagePreview] = useState("");
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [errors, setErrors] = useState("");
@@ -14,42 +15,40 @@ export default function PostCreate() {
   const navigate = useNavigate();
   const { id } = useParams();
 
-  // Fetch post details based on ID
   const fetchDetailPost = async () => {
     try {
       const response = await api.get(`/api/posts/${id}`);
       const { title, content, image } = response.data.data;
       setTitle(title);
       setContent(content);
-      setImagePreview(image); // Set the image preview URL
+      setImagePreview(image);
     } catch (error) {
       console.error("Error fetching post details", error);
     }
   };
 
-  // Hook useEffect to fetch data on component mount
   useEffect(() => {
     fetchDetailPost();
   }, [id]);
 
-  // Handle file change
   const handleFileChange = (e) => {
     setImage(e.target.files[0]);
-    // Create a URL for the new image file and set it to imagePreview
     if (e.target.files[0]) {
       setImagePreview(URL.createObjectURL(e.target.files[0]));
     }
   };
 
-  // Update post
+  const handleTrixChange = (e) => {
+    setContent(e.target.value);
+  };
+
   const updatePost = async (e) => {
     e.preventDefault();
 
-    // Initialize form data
     const formData = new FormData();
-    if (image) formData.append("image", image); // Append image only if it is selected
+    if (image) formData.append("image", image);
     formData.append("title", title);
-    formData.append("content", content);
+    formData.append("content", content); // Ensure content is appended
     formData.append("_method", "PUT");
 
     try {
@@ -72,7 +71,7 @@ export default function PostCreate() {
       <div className="row">
         <div className="col-md-12">
           <div className="card border-0 rounded shadow">
-            <div className="card-body ">
+            <div className="card-body">
               <form onSubmit={updatePost}>
                 <div className="my-3">
                   <h2>POST EDIT</h2>
@@ -99,7 +98,7 @@ export default function PostCreate() {
                     {errors.image && <div className="alert alert-danger mt-2">{errors.image[0]}</div>}
                   </div>
                   <div className="mb-3">
-                    <label htmlFor="exampleFormControlInput1" className="form-label">
+                    <label htmlFor="title" className="form-label">
                       Title
                     </label>
                     <input
@@ -113,14 +112,13 @@ export default function PostCreate() {
                     {errors.title && <div className="alert alert-danger mt-2">{errors.title[0]}</div>}
                   </div>
                   <div className="mb-3">
-                    <label htmlFor="exampleFormControlTextarea1" className="form-label">
+                    <label htmlFor="content" className="form-label">
                       Content
                     </label>
-                    <textarea
-                      className="form-control"
-                      id="exampleFormControlTextarea1"
-                      rows="3"
-                      onChange={(e) => setContent(e.target.value)}
+                    <input id="content" type="hidden" value={content} onChange={handleTrixChange} />
+                    <trix-editor
+                      input="content"
+                      onChange={handleTrixChange}
                       value={content}
                     />
                     {errors.content && <div className="alert alert-danger mt-2">{errors.content[0]}</div>}
@@ -130,7 +128,7 @@ export default function PostCreate() {
                   Simpan
                 </button>
                 <button type="reset" className="btn btn-secondary btn-lg mx-1">
-                  Reset 
+                  Reset
                 </button>
               </form>
             </div>

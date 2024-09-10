@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../../api";
 import Swal from "sweetalert2"; // Import SweetAlert2
+import axios from "axios";
 
 export default function PostCreate() {
   // Define state
@@ -10,6 +11,7 @@ export default function PostCreate() {
   const [content, setContent] = useState("");
   const [errors, setErrors] = useState("");
   const navigate = useNavigate();
+  const trixRef = useRef(null);
 
   // Handle file change
   const handleFileChange = (e) => {
@@ -24,7 +26,7 @@ export default function PostCreate() {
     const formData = new FormData();
     formData.append("image", image);
     formData.append("title", title);
-    formData.append("content", content);
+    formData.append("content", trixRef.current.editor.getDocument().toString());
 
     try {
       await api.post("/api/posts", formData);
@@ -41,12 +43,19 @@ export default function PostCreate() {
     }
   };
 
+  // Set the content of the Trix editor if there's any existing content
+  useEffect(() => {
+    if (trixRef.current) {
+      trixRef.current.editor.setSelectedRange([0, 0]); // Start with an empty editor
+    }
+  }, []);
+
   return (
     <div className="container py-5">
       <div className="row">
         <div className="col-md-12">
           <div className="card border-0 rounded shadow">
-            <div className="card-body ">
+            <div className="card-body">
               <form onSubmit={storePost}>
                 <div className="my-3">
                   <h2>TAMBAH POST BARU</h2>
@@ -68,7 +77,13 @@ export default function PostCreate() {
                     <label htmlFor="exampleFormControlTextarea1" className="form-label">
                       Content
                     </label>
-                    <textarea className="form-control" id="exampleFormControlTextarea1" rows="3" onChange={(e) => setContent(e.target.value)} />
+                    <input id="trix-editor" type="hidden" name="content" />
+                    <trix-editor
+                      ref={trixRef}
+                      className="form-control"
+                      onChange={(e) => setContent(e.target.value)}
+                      id="exampleFormControlTextarea1"
+                    ></trix-editor>
                     {errors.content && <div className="alert alert-danger mt-2">{errors.content[0]}</div>}
                   </div>
                 </div>
